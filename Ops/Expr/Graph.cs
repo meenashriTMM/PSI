@@ -21,7 +21,15 @@ public class ExprGrapher : Visitor<int> {
       int a = binary.Left.Accept (this), b = binary.Right.Accept (this);
       int id = NewNode ($"([{binary.Op.Text} : {binary.Type}])");
       mSB.AppendLine ($"id{mID} --> id{a}; id{mID} --> id{b}");
-      return id; 
+      return id;
+   }
+
+   public override int Visit (NFnCall fnCall) {
+      var ids = fnCall.Params.Select (a => a.Accept (this)).ToList ();
+      int id = NewNode ($"([{fnCall.Name.Text} : {fnCall.Type}])");
+      ids.ForEach (a => mSB.Append ($"id{mID} --> id{a};"));
+      if (ids.Count > 0) mSB.AppendLine ();
+      return id;
    }
 
    public void SaveTo (string file) {
