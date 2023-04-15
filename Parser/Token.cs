@@ -1,5 +1,6 @@
 namespace PSI;
 using static Token.E;
+using static Console;
 
 // Represents a PSI language Token
 public class Token {
@@ -38,9 +39,23 @@ public class Token {
    // Utility function used to echo an error to the console
    public void PrintError () {
       if (Kind != ERROR) throw new Exception ("PrintError called on a non-error token");
-      Console.ForegroundColor = ConsoleColor.Yellow;
-      Console.WriteLine ($"At line {Line}, column {Column} of {Source.FileName}: {Text}");
-      Console.ResetColor ();
+      var str = $"File: {Source.FileName}";
+      WriteLine (str);
+      WriteLine (new string ('\u2500', str.Length));
+      int end = Line + 2;
+      for (int i = Line - 2; i <= end; i++) {
+         if (i < 1 || i > Source.Lines.Length) continue;
+         WriteLine ($"{i,4}\u2502{Source.Lines[i - 1]}");
+         if (i != Line) continue;
+         var left = 4 + Column;
+         while (left >= WindowWidth) left -= WindowWidth;
+         ForegroundColor = ConsoleColor.Yellow;
+         CursorLeft = left;
+         WriteLine ('^');
+         CursorLeft = Math.Min (Math.Max (0, left - Text.Length / 2), WindowWidth - Text.Length);
+         WriteLine (Text);
+         ResetColor ();
+      }
    }
 
    // Helper used by the parser (maps operator sequences to E values)
