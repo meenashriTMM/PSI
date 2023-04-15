@@ -5,7 +5,7 @@ using System.Diagnostics;
 static class Start {
    static void Main () {
       Test1 ();      // Test ExprEval and ExprILGen
-      Test2 ();      // Test ExprTyper and ExprGrapher
+      Test2 ();      // Test ExprTyper, ExprGrapher & ExprXMLGen
       Test3 ();      // Type checks on various expressions
       Test4 ();      // Tokenizer - printout of invalid token
    }
@@ -44,6 +44,8 @@ static class Start {
       var pi = new ProcessStartInfo ("c:/etc/test.html") { UseShellExecute = true };
       Process.Start (pi);
       Console.Write ("\nPress any key..."); Console.ReadKey (true);
+
+      File.WriteAllText ("c:/etc/test.xml", node.Accept (new ExprXMLGen ()).ToString ());
    }
 
    // Type checks of various expressions
