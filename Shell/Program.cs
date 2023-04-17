@@ -43,9 +43,9 @@ static class Start {
       graph.SaveTo ("c:/etc/test.html");
       var pi = new ProcessStartInfo ("c:/etc/test.html") { UseShellExecute = true };
       Process.Start (pi);
-      Console.Write ("\nPress any key..."); Console.ReadKey (true);
 
       File.WriteAllText ("c:/etc/test.xml", node.Accept (new ExprXMLGen ()).ToString ());
+      Console.Write ("\nPress any key..."); Console.ReadKey (true);
    }
 
    // Type checks of various expressions
