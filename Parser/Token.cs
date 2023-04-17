@@ -47,13 +47,12 @@ public class Token {
          if (i < 1 || i > Source.Lines.Length) continue;
          WriteLine ($"{i,4}\u2502{Source.Lines[i - 1]}");
          if (i != Line) continue;
-         var left = 4 + Column;
-         while (left >= WindowWidth) left -= WindowWidth;
+         var left = 5 + Column;
+         while (left > WindowWidth) left -= WindowWidth;
          ForegroundColor = ConsoleColor.Yellow;
-         CursorLeft = left;
-         WriteLine ('^');
-         CursorLeft = Math.Min (Math.Max (0, left - Text.Length / 2), WindowWidth - Text.Length);
-         WriteLine (Text);
+         WriteLine ("^".PadLeft (left));
+         left = Math.Min (left + Text.Length / 2, WindowWidth);
+         WriteLine (Text.PadLeft (left));
          ResetColor ();
       }
    }
