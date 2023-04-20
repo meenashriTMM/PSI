@@ -9,10 +9,17 @@ public abstract class Visitor<T> {
    public abstract T Visit (NBlock b);
    public abstract T Visit (NDeclarations d);
    public abstract T Visit (NVarDecl d);
+   public abstract T Visit (NFuncProcDecl f);
 
    public abstract T Visit (NCompoundStmt b);
    public abstract T Visit (NAssignStmt a);
    public abstract T Visit (NWriteStmt w);
+   public abstract T Visit (NReadStmt r);
+   public abstract T Visit (NWhileStmt w);
+   public abstract T Visit (NCallStmt c);
+   public abstract T Visit (NIfStmt i);
+   public abstract T Visit (NRepeatUntilStmt r);
+   public abstract T Visit (NForStmt f);
 
    public abstract T Visit (NLiteral t);
    public abstract T Visit (NIdentifier d);

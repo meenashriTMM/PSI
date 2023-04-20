@@ -9,7 +9,7 @@ function Fibo (fn: integer) : integer;
 var
    fi: integer;
 begin
-   if fn <= 2 Fibo := 1;
+   if fn <= 2 then Fibo := 1;
    else Fibo := Fibo (n - 2) + Fibo (n - 1);
 end;
 
@@ -30,8 +30,8 @@ var
 begin
    write ("Enter your name: ");
    read (name);
-   write ("Hello, ", name ". ", msg);
-end
+   write ("Hello, ", name, ". ", msg);
+end;
 
 
 begin

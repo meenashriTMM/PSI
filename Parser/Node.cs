@@ -20,12 +20,17 @@ public record NBlock (NDeclarations Decls, NCompoundStmt Body) : Node {
 }
 
 // The declarations section precedes the body of every block
-public record NDeclarations (NVarDecl[] Vars) : Node {
+public record NDeclarations (NVarDecl[] Vars, NFuncProcDecl[] FuncProcs) : Node {
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
 }
 
 // Declares a variable (with a type)
 public record NVarDecl (Token Name, NType Type) : Node {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// Declares a function/ procedure
+public record NFuncProcDecl (Token Name, NVarDecl[] Params, NType Type, NBlock Block) : Node {
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
 }
 #endregion
@@ -46,6 +51,36 @@ public record NWriteStmt (bool NewLine, NExpr[] Exprs) : NStmt {
 
 // An assignment statement
 public record NAssignStmt (Token Name, NExpr Expr) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// A Read statement
+public record NReadStmt (Token[] Args) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// A Call statement
+public record NCallStmt (Token Name, NExpr[] Args) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// If statement
+public record NIfStmt (NExpr Expr, NStmt[] Stmts) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// While Loop
+public record NWhileStmt (NExpr Expr, NStmt Stmt) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// Repeat Loop
+public record NRepeatUntilStmt (NExpr Expr, NStmt[] Stmts) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// For Loop
+public record NForStmt (Token Variable, bool isTo, NExpr[] Exprs, NStmt Stmt) : NStmt {
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
 }
 #endregion

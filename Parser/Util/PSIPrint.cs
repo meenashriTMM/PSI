@@ -4,6 +4,7 @@
 namespace PSI;
 
 public class PSIPrint : Visitor<StringBuilder> {
+   #region Main, Declarations --------------------------------------------------
    public override StringBuilder Visit (NProgram p) {
       Write ($"program {p.Name}; ");
       Visit (p.Block);
@@ -20,12 +21,30 @@ public class PSIPrint : Visitor<StringBuilder> {
             NWrite ($"{g.Select (a => a.Name).ToCSV ()} : {g.Key};");
          N--;
       }
+      d.FuncProcs.ForEach (a => Visit (a));
       return S;
    }
 
    public override StringBuilder Visit (NVarDecl d)
-      => NWrite ($"{d.Name} : {d.Type}");
+      => Write ($"{d.Name}: {d.Type}");
 
+   public override StringBuilder Visit (NFuncProcDecl d) {
+      NWrite (""); NWrite ("");
+      var procedure = d.Type == NType.None;
+      NWrite (procedure ? "procedure" : "function");
+      Write ($" {d.Name.Text} (");
+      for (int i = 0; i < d.Params.Length; i++) {
+         if (i > 0) Write ("; "); d.Params[i].Accept (this);
+      }
+      Write (")");
+      if (!procedure) Write ($" : {d.Type}");
+      Write (";");
+      Visit (d.Block);
+      return Write (";");
+   }
+   #endregion
+
+   #region Statement -----------------------------------------------------------
    public override StringBuilder Visit (NCompoundStmt b) {
       NWrite ("begin"); N++;  Visit (b.Stmts); N--; return NWrite ("end"); 
    }
@@ -43,6 +62,49 @@ public class PSIPrint : Visitor<StringBuilder> {
       return Write (");");
    }
 
+   public override StringBuilder Visit (NReadStmt r)
+      => NWrite ($"read ({r.Args.Select (a => a.Text).ToCSV ()});");
+
+   public override StringBuilder Visit (NWhileStmt w) {
+      NWrite ("while "); Visit (w.Expr); Write (" do");
+      N++; Visit (w.Stmt); N--;
+      return Semi (w.Stmt);
+   }
+
+   public override StringBuilder Visit (NCallStmt c) {
+      NWrite ($"{c.Name} (");
+      for (int i = 0; i < c.Args.Length; i++) {
+         if (i > 0) Write (", "); c.Args[i].Accept (this);
+      }
+      return Write (");");
+   }
+
+   public override StringBuilder Visit (NIfStmt i) {
+      NWrite ("if "); Visit (i.Expr); Write (" then");
+      var stmt = i.Stmts[0];
+      N++; Visit (stmt); Semi (stmt); N--;
+      if (i.Stmts.Length > 1) {
+         stmt = i.Stmts[1];
+         NWrite ("else"); N++; Visit (stmt); Semi (stmt); N--;
+      }
+      return S;
+   }
+
+   public override StringBuilder Visit (NRepeatUntilStmt w) {
+      NWrite ("repeat "); N++; Visit (w.Stmts); N--; NWrite ("until ");
+      return Visit (w.Expr);
+   }
+
+   public override StringBuilder Visit (NForStmt f) {
+      NWrite ($"for {f.Variable.Text} := "); Visit (f.Exprs[0]);
+      Write (f.isTo ? " to " : " downto ");
+      Visit (f.Exprs[1]); Write (" do");
+      N++; Visit (f.Stmt); Semi (f.Stmt); N--;
+      return S;
+   }
+   #endregion
+
+   #region Expression ----------------------------------------------------------
    public override StringBuilder Visit (NLiteral t)
       => Write (t.Value.ToString ());
 
@@ -65,6 +127,9 @@ public class PSIPrint : Visitor<StringBuilder> {
       }
       return Write (")");
    }
+   #endregion
+
+   StringBuilder Semi (NStmt stmt) { if (stmt is NCompoundStmt) Write (";"); return S; }
 
    StringBuilder Visit (params Node[] nodes) {
       nodes.ForEach (a => a.Accept (this));
