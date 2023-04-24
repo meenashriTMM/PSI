@@ -35,7 +35,7 @@ public class Parser {
          do { vars.AddRange (VarDecls ()); Expect (SEMI); } while (Peek (IDENT));
 
       while (Match (FUNCTION) || Match (PROCEDURE)) {
-         var tok = mPrevious; var ident = Expect (IDENT); var parameters = ParamsList (); var type = None;
+         var tok = mPrevious; var ident = Expect (IDENT); var parameters = ParamsList (); var type = Void;
          if (tok.Kind == FUNCTION) { Match (COLON); type = Type (); }
          Expect (SEMI); var block = Block (); Expect (SEMI);
          funcProcs.Add (new NFuncProcDecl (ident, parameters, type, block));
@@ -125,10 +125,9 @@ public class Parser {
 
    // if-stmt = "if" expression "then" statement ["else" statement] .
    NIfStmt IfStmt () {
-      List<NStmt> stmts = new ();
-      var expr = Expression (); Expect (THEN); stmts.Add (Stmt ()); Match (SEMI);
-      if (Match (ELSE)) stmts.Add (Stmt ());
-      return new (expr, stmts.ToArray ());
+      var expr = Expression (); Expect (THEN); var ifStmt = Stmt (); Match (SEMI);
+      NStmt? elseStmt = Match (ELSE) ? Stmt () : null;
+      return new (expr, ifStmt, elseStmt);
    }
 
    // while-stmt = "while" expression "do" statement .

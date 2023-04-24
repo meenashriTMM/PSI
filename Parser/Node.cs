@@ -65,7 +65,7 @@ public record NCallStmt (Token Name, NExpr[] Args) : NStmt {
 }
 
 // If statement
-public record NIfStmt (NExpr Expr, NStmt[] Stmts) : NStmt {
+public record NIfStmt (NExpr Expr, NStmt IfPart, NStmt? ElsePart) : NStmt {
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
 }
 

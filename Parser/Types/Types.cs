@@ -6,7 +6,7 @@ namespace PSI;
 using static NType;
 
 // The data-type at any NExpr node
-public enum NType { None, Int, Real, Bool, String, Char, Error, Void }
+public enum NType { Unknown, Int, Real, Bool, String, Char, Error, Void }
 
 // Declarations in context in this Block
 public class Context {

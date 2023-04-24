@@ -30,7 +30,7 @@ public class PSIPrint : Visitor<StringBuilder> {
 
    public override StringBuilder Visit (NFuncProcDecl d) {
       NWrite (""); NWrite ("");
-      var procedure = d.Type == NType.None;
+      var procedure = d.Type == NType.Void;
       NWrite (procedure ? "procedure" : "function");
       Write ($" {d.Name.Text} (");
       for (int i = 0; i < d.Params.Length; i++) {
@@ -81,10 +81,10 @@ public class PSIPrint : Visitor<StringBuilder> {
 
    public override StringBuilder Visit (NIfStmt i) {
       NWrite ("if "); Visit (i.Expr); Write (" then");
-      var stmt = i.Stmts[0];
-      N++; Visit (stmt); Semi (stmt); N--;
-      if (i.Stmts.Length > 1) {
-         stmt = i.Stmts[1];
+      var stmt = i.IfPart;
+      N++; Visit (i.IfPart); Semi (stmt); N--;
+      stmt = i.ElsePart;
+      if (stmt != null) {
          NWrite ("else"); N++; Visit (stmt); Semi (stmt); N--;
       }
       return S;
