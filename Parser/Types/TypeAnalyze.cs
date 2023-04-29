@@ -118,7 +118,7 @@ public class TypeAnalyze : Visitor<NType> {
    }
 
    public override NType Visit (NUnary u) 
-      => u.Expr.Accept (this);
+      => u.Type = u.Expr.Accept (this);
 
    public override NType Visit (NBinary bin) {
       NType a = bin.Left.Accept (this), b = bin.Right.Accept (this);
