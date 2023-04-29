@@ -10,7 +10,7 @@ var
    fi: integer;
 begin
    if fn <= 2 then Fibo := 1;
-   else Fibo := Fibo (n - 2) + Fibo (n - 1);
+   else Fibo := Fibo (fn - 2) + Fibo (fn - 1);
 end;
 
 

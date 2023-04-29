@@ -30,6 +30,7 @@ public class Parser {
 
    // declarations = [var-decls] [procfn-decls] .
    NDeclarations Declarations () {
+      var constants = Match (CONST) ? ConstDecls () : new NConstDecl[0];
       var variables = Match (VAR) ? VarDecls () : new NVarDecl[0];
       List<NFnDecl> funcs = new ();
       while (Match (FUNCTION, PROCEDURE)) {
@@ -38,9 +39,11 @@ public class Parser {
          var pars = VarDecls (); Expect (CLOSE);
          if (function) { Expect (COLON); rtype = Type (); }
          Expect (SEMI);
-         funcs.Add (new NFnDecl (name, pars, rtype, Block ()));
+         var block = Block ();
+         block.VarDecls = pars;
+         funcs.Add (new NFnDecl (name, pars, rtype, block));
       }
-      return new (variables, funcs.ToArray ());
+      return new (constants, variables, funcs.ToArray ());
    }
 
    // ident-list = IDENT { "," IDENT }
@@ -59,6 +62,17 @@ public class Parser {
          Match (SEMI);
       }
       return vars.ToArray ();
+   }
+
+   NConstDecl[] ConstDecls () {
+      List<NConstDecl> constants = new ();
+      while (Peek (IDENT)) {
+         var name = Expect (IDENT);
+         Expect (EQ);
+         constants.Add (new (name, new NLiteral (Expect (L_INTEGER, L_REAL, L_BOOLEAN, L_CHAR, L_STRING))));
+         Expect (SEMI);
+      }
+      return constants.ToArray ();
    }
 
    // type = integer | real | boolean | string | char

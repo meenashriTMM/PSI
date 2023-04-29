@@ -16,11 +16,18 @@ public record NProgram (Token Name, NBlock Block) : Node {
 
 // A block contains declarations and a body
 public record NBlock (NDeclarations Declarations, NCompoundStmt Body) : Node {
+   /// <summary>If this block is inside a function, it contains the parameters of the function</summary>
+   public NVarDecl[] VarDecls { get; set; } = Array.Empty<NVarDecl> ();
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+}
+
+// Declares a constant
+public record NConstDecl (Token Name, NLiteral Value) : Node {
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
 }
 
 // The declarations section precedes the body of every block
-public record NDeclarations (NVarDecl[] Vars, NFnDecl[] Funcs) : Node {
+public record NDeclarations (NConstDecl[] Constants, NVarDecl[] Vars, NFnDecl[] Funcs) : Node {
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
 }
 
