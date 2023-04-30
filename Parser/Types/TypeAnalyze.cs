@@ -82,6 +82,8 @@ public class TypeAnalyze : Visitor<NType> {
    }
 
    public override NType Visit (NForStmt f) {
+      if (mSymbols.Find (f.Var.Text) is not NVarDecl)
+         throw new ParseException (f.Var, "Unknown variable");
       f.Start.Accept (this); f.End.Accept (this); f.Body.Accept (this);
       return Void;
    }
