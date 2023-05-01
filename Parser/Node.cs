@@ -33,6 +33,7 @@ public record NDeclarations (NConstDecl[] Constants, NVarDecl[] Vars, NFnDecl[] 
 
 // Declares a variable (with a type)
 public record NVarDecl (Token Name, NType Type) : Node {
+   public bool IsAssigned { get; set; }
    public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
    public override string ToString () => $"{Type} {Name}";
 }

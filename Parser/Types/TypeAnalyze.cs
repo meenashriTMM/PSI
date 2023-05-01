@@ -44,7 +44,10 @@ public class TypeAnalyze : Visitor<NType> {
       mSymbols.Funcs.Add (f);
       CreateNewSymTable ();
       mUseSameSymTable = true;
-      Visit (f.Params);
+      foreach (NVarDecl par in f.Params) {
+         par.Accept (this);
+         par.IsAssigned = true;
+      }
       f.Body?.Accept (this);
       return f.Return;
    }
@@ -55,13 +58,15 @@ public class TypeAnalyze : Visitor<NType> {
       => Visit (b.Stmts);
 
    public override NType Visit (NAssignStmt a) {
-      NType type = mSymbols.Find (a.Name.Text) switch {
-         NVarDecl v => v.Type,
-         NFnDecl f => f.Return,
+      Action none = () => { };
+      (NType type, Action act) = mSymbols.Find (a.Name.Text) switch {
+         NVarDecl v => (v.Type, () => v.IsAssigned = true),
+         NFnDecl f => (f.Return, none),
          _ => throw new ParseException (a.Name, "Unknown variable")
       };
       a.Expr.Accept (this);
       a.Expr = AddTypeCast (a.Name, a.Expr, type);
+      act ();
       return type;
    }
    
@@ -85,15 +90,19 @@ public class TypeAnalyze : Visitor<NType> {
    }
 
    public override NType Visit (NForStmt f) {
-      if (mSymbols.Find (f.Var.Text) is not NVarDecl)
+      if (mSymbols.Find (f.Var.Text) is not NVarDecl v)
          throw new ParseException (f.Var, "Unknown variable");
+      v.IsAssigned = true;
       f.Start.Accept (this); f.End.Accept (this); f.Body.Accept (this);
       return Void;
    }
 
    public override NType Visit (NReadStmt r) {
-      var var = r.Vars.FirstOrDefault (a => mSymbols.Find (a.Text) is not NVarDecl);
-      if (var != null) throw new ParseException (var, $"Name \"{var.Text}\" does not exist in the current context");
+      foreach (var var in r.Vars) {
+         if (mSymbols.Find (var.Text) is not NVarDecl v)
+            throw new ParseException (var, $"Name \"{var.Text}\" does not exist in the current context");
+         v.IsAssigned = true;
+      }
       return Void;
    }
 
@@ -155,11 +164,13 @@ public class TypeAnalyze : Visitor<NType> {
    }
 
    public override NType Visit (NIdentifier d) {
-      return mSymbols.Find (d.Name.Text) switch {
-         NVarDecl v => d.Type = v.Type,
-         NConstDecl c => d.Type = c.Value.Type,
+      NType type = mSymbols.Find (d.Name.Text) switch {
+         NVarDecl v when !v.IsAssigned => throw new ParseException (d.Name, $"Use of unassigned variable \"{d.Name.Text}\""),
+         NVarDecl v => v.Type,
+         NConstDecl c => c.Value.Type,
          _ => throw new ParseException (d.Name, "Unknown variable")
       };
+      return d.Type = type;
    }
 
    public override NType Visit (NFnCall f) => f.Type = Call (f.Name, f.Params);
