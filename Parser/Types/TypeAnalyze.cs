@@ -16,10 +16,10 @@ public class TypeAnalyze : Visitor<NType> {
       => Visit (p.Block);
    
    public override NType Visit (NBlock b) {
-      mSymbols = new SymTable { Parent = mSymbols };
-      Visit (b.VarDecls);
+      if (!mUseSameSymTable) CreateNewSymTable ();
+      else mUseSameSymTable = false;
       Visit (b.Declarations); Visit (b.Body);
-      mSymbols = mSymbols.Parent;
+      mSymbols = mSymbols.Parent!;
       return Void;
    }
 
@@ -42,6 +42,9 @@ public class TypeAnalyze : Visitor<NType> {
    public override NType Visit (NFnDecl f) {
       Exists (f.Name);
       mSymbols.Funcs.Add (f);
+      CreateNewSymTable ();
+      mUseSameSymTable = true;
+      Visit (f.Params);
       f.Body?.Accept (this);
       return f.Return;
    }
@@ -180,6 +183,8 @@ public class TypeAnalyze : Visitor<NType> {
       return fnDecl.Return;
    }
 
+   void CreateNewSymTable () => mSymbols = new SymTable { Parent = mSymbols };
+
    void Exists (Token tok) {
       if (mSymbols.Find (tok.Text, true) != null)
          throw new ParseException (tok, $"Name \"{tok.Text}\" already exists");
@@ -189,5 +194,9 @@ public class TypeAnalyze : Visitor<NType> {
       foreach (var node in nodes) node.Accept (this);
       return NType.Void;
    }
+   #endregion
+
+   #region Private Fields ----------------------------------
+   bool mUseSameSymTable;
    #endregion
 }
