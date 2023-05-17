@@ -1,5 +1,6 @@
 ﻿namespace PSICover;
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 
 // The CoverageAnalyzer for .Net
@@ -150,6 +151,8 @@ class Analyzer {
    void GenerateOutputs () {
       ulong[] hits = File.ReadAllLines ($"{Dir}/hits.txt").Select (ulong.Parse).ToArray ();
       var files = mBlocks.Select (a => a.File).Distinct ().ToArray ();
+      // Summary ignores the overlapping blocks that will be deleted
+      List<(string Filename, int TotalBlocks, int CoveredBlocks, double Percentage)> summary = new ();
       foreach (var file in files) {
          var blocks = mBlocks.Where (a => a.File == file)
                              .OrderBy (a => a.SPosition)
@@ -163,11 +166,19 @@ class Analyzer {
          var code = File.ReadAllLines (file);
          for (int i = 0; i < code.Length; i++)
             code[i] = code[i].Replace ('<', '\u00ab').Replace ('>', '\u00bb');
+         int hitCnt = 0;
          foreach (var block in blocks) {
-            bool hit = hits[block.Id] > 0;
-            string tag = $"<span class=\"{(hit ? "hit" : "unhit")}\">";
-            code[block.ELine] = code[block.ELine].Insert (block.ECol, "</span>");
-            code[block.SLine] = code[block.SLine].Insert (block.SCol, tag);
+            var count = hits[block.Id];
+            bool hit = count > 0;
+            if (hit) hitCnt++;
+            string startTag = $"<span class=\"{(hit ? "hit" : "unhit")}\" title= \"{count} hits\">";
+            string endTag = "</span>";
+            for (int i = block.ELine; i >= block.SLine; i--) {
+               var str = code[i];
+               int start = i == block.SLine ? block.SCol : str.TakeWhile (char.IsWhiteSpace).Count ();
+               int end = i == block.ELine ? block.ECol : str.Length;
+               code[i] = str.Insert (end, endTag).Insert (start, startTag);
+            }
          }
          string htmlfile = $"{Dir}/HTML/{Path.GetFileNameWithoutExtension (file)}.html";
 
@@ -182,10 +193,45 @@ class Analyzer {
             """;
          html = html.Replace ("\u00ab", "&lt;").Replace ("\u00bb", "&gt;");
          File.WriteAllText (htmlfile, html);
+         summary.Add ((file, blocks.Count, hitCnt, Math.Round (100.0 * hitCnt / blocks.Count, 1)));
       }
       int cBlocks = mBlocks.Count, cHit = hits.Count (a => a > 0);
       double percent = Math.Round (100.0 * cHit / cBlocks, 1);
       Console.WriteLine ($"Coverage: {cHit}/{cBlocks}, {percent}%");
+
+      // Generate summary
+      StringBuilder sb = new ();
+      foreach (var item in summary.OrderBy (a => a.Percentage)) {
+         sb.AppendLine ("<tr>");
+         sb.AppendLine ($"  <td>{item.Filename}</td>");
+         sb.AppendLine ($"  <td>{item.TotalBlocks}</td>");
+         sb.AppendLine ($"  <td>{item.CoveredBlocks}</td>");
+         sb.AppendLine ($"  <td>{item.Percentage}%</td>");
+         sb.AppendLine ("</tr>");
+      }
+      string summaryHtml = $$"""
+            <html><head><style>
+            table, th, td {
+              border: 1px solid black;
+              border-collapse: collapse;
+            }
+            th, td {
+              padding: 10px;
+            }
+            </style></head>
+            <body><pre>
+            <h1>Coverage summary</h1>
+            <table>
+            <tr>
+              <th>File name</th>
+              <th>Total blocks</th>
+              <th>Covered blocks</th>
+              <th>Percentage</th>
+            </tr>
+            {{sb}}</table>
+            </pre></body></html>
+            """;
+      File.WriteAllText ($"{Dir}/HTML/summary.html", summaryHtml);
    }
 
    // Restore the DLLs and PDBs from the backups
