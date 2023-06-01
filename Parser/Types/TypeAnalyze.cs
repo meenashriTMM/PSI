@@ -88,8 +88,8 @@ class TypeAnalyze : Visitor<NType> {
 
    public override NType Visit (NForStmt f) {
       var v = ExpectVar (f.Var);
-      if (v.Type != Integer) Fatal (f.Var, "For loop variable must be an integer");
-      v.Assigned = true; 
+      if (v.Type is not (Integer or Char)) Fatal (f.Var, "For loop variable must be an integer");
+      v.Assigned = true;
       f.Start = AddTypeCast (f.Start, v.Type);
       f.End = AddTypeCast (f.End, v.Type);
       f.Body.Accept (this);

@@ -59,6 +59,18 @@ public class ILCodeGen : Visitor {
       else Out ($"    stsfld {type} Program::{vd.Name}");
    }
 
+   void LoadIdent (Token name) {
+      switch (mSymbols.Find (name)) {
+         case NConstDecl cd: Visit (cd.Value); break;
+         case NVarDecl vd:
+            var type = TMap[vd.Type];
+            if (vd.Local) Out ($"    ldloc {vd.Name}");
+            else Out ($"    ldsfld {type} Program::{vd.Name}");
+            break;
+         default: throw new NotImplementedException ();
+      }
+   }
+
    public override void Visit (NWriteStmt w) {
       foreach (var e in w.Exprs) {
          e.Accept (this);
@@ -77,7 +89,23 @@ public class ILCodeGen : Visitor {
       if (hasElse) { f.ElsePart?.Accept (this); Out ($"  {lbl2}:"); }
    }
 
-   public override void Visit (NForStmt f) => throw new NotImplementedException ();
+   public override void Visit (NForStmt f) {
+      f.Start.Accept (this); StoreVar (f.Var);
+      string lab1 = NextLabel (), lab2 = NextLabel ();
+      Out ($"    br {lab2}");
+      Out ($"  {lab1}:");
+      f.Body.Accept (this);
+      LoadIdent (f.Var);
+      Out ($"    ldc.i4 1");
+      Out (f.Ascending ? "    add" : "    sub");
+      StoreVar (f.Var);
+      Out ($"  {lab2}:");
+      LoadIdent (f.Var);
+      f.End.Accept (this);
+      Out ($"    {(f.Ascending ? "cgt" : "clt")}");
+      Out ($"    brfalse {lab1}");
+   }
+
    public override void Visit (NReadStmt r) => throw new NotImplementedException ();
 
    public override void Visit (NWhileStmt w) {
@@ -115,17 +143,7 @@ public class ILCodeGen : Visitor {
       });
    }
 
-   public override void Visit (NIdentifier d) {
-      switch (mSymbols.Find (d.Name)) {
-         case NConstDecl cd: Visit (cd.Value); break;
-         case NVarDecl vd:
-            var type = TMap[vd.Type];
-            if (vd.Local) Out ($"    ldloc {vd.Name}");
-            else Out ($"    ldsfld {type} Program::{vd.Name}");
-            break;
-         default: throw new NotImplementedException ();
-      }
-   }
+   public override void Visit (NIdentifier d) => LoadIdent (d.Name);
 
    public override void Visit (NUnary u) {
       u.Expr.Accept (this);
