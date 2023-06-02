@@ -27,7 +27,9 @@ public class ILCodeGen : Visitor {
    }
    SymTable mSymbols = SymTable.Root;
 
-   public override void Visit (NBlock b) => throw new NotImplementedException ();
+   public override void Visit (NBlock b) {
+      Visit (b.Declarations); Visit (b.Body);
+   }
 
    public override void Visit (NDeclarations d) {
       Visit (d.Consts); Visit (d.Vars); Visit (d.Funcs);
@@ -39,10 +41,23 @@ public class ILCodeGen : Visitor {
 
    public override void Visit (NVarDecl v) {
       mSymbols.Add (v);
-      Out ($"    .field static {TMap[v.Type]} {v.Name}");
+      if (v.Local) Out ($"    .locals init ({TMap[v.Type]} {v.Name})");
+      else Out ($"    .field static {TMap[v.Type]} {v.Name}");
    }
 
-   public override void Visit (NFnDecl f) => throw new NotImplementedException ();
+   public override void Visit (NFnDecl f) {
+      mSymbols.Add (f);
+      mSymbols = new SymTable () { Local = true, Parent = mSymbols };
+      f.Params.ForEach (v => { mSymbols.Add (v); v.Assigned = v.Argument = true; });
+      Out ($"  .method static {TMap[f.Return]} {f.Name} ({f.Params.Select (a => $"{TMap[a.Type]} {a.Name}").ToCSV ()}) {{");
+      var hasReturn = f.Return != NType.Void;
+      if (hasReturn) Visit (new NVarDecl (f.Name, f.Return));
+      f.Block?.Accept (this);
+      if (hasReturn) LoadIdent (f.Name);
+      Out ("    ret");
+      Out ("  }");
+      mSymbols = mSymbols.Parent;
+   }
 
    public override void Visit (NCompoundStmt b) =>
       Visit (b.Stmts);
@@ -64,11 +79,27 @@ public class ILCodeGen : Visitor {
          case NConstDecl cd: Visit (cd.Value); break;
          case NVarDecl vd:
             var type = TMap[vd.Type];
-            if (vd.Local) Out ($"    ldloc {vd.Name}");
+            if (vd.Argument) Out ($"    ldarg {vd.Name}");
+            else if (vd.Local) Out ($"    ldloc {vd.Name}");
+            else if (vd.StdLib) Out ($"    call {type} [PSILib]PSILib.Lib::get_{vd.Name}()");
             else Out ($"    ldsfld {type} Program::{vd.Name}");
             break;
          default: throw new NotImplementedException ();
       }
+   }
+
+   void CallFn (Token tok, NExpr[] paras) {
+      Visit (paras);
+      string fullName = "Program", name, type;
+      switch (mSymbols.Find (tok)) {
+         case NFnDecl fd:
+            if (fd.StdLib) fullName = "[PSILib]PSILib.Lib";
+            type = TMap[fd.Return]; name = fd.Name.Text;
+            break;
+         case NVarDecl vd: type = TMap[vd.Type]; name = vd.Name.Text; break;
+         default: throw new NotImplementedException ();
+      }
+      Out ($"    call {type} {fullName}::{name} ({paras.Select (a => TMap[a.Type]).ToCSV ()})");
    }
 
    public override void Visit (NWriteStmt w) {
@@ -128,8 +159,8 @@ public class ILCodeGen : Visitor {
    string NextLabel () => $"IL_{++mLabel:D4}";
    int mLabel;
 
-   
-   public override void Visit (NCallStmt c) => throw new NotImplementedException ();
+
+   public override void Visit (NCallStmt c) => CallFn (c.Name, c.Params);
 
    public override void Visit (NLiteral t) {
       var v = t.Value;
@@ -168,8 +199,8 @@ public class ILCodeGen : Visitor {
          Out ($"    {op}");
       }
    }
-   
-   public override void Visit (NFnCall f) => throw new NotImplementedException ();
+
+   public override void Visit (NFnCall f) => CallFn (f.Name, f.Params);
 
    public override void Visit (NTypeCast t) {
       t.Expr.Accept (this);
