@@ -16,6 +16,7 @@ public abstract class Visitor<T> {
    public abstract T Visit (NAssignStmt a);
    public abstract T Visit (NWriteStmt w);
    public abstract T Visit (NIfStmt f);
+   public abstract T Visit (NBreakStmt f);
    public abstract T Visit (NForStmt f);
    public abstract T Visit (NReadStmt r);
    public abstract T Visit (NWhileStmt w);
@@ -43,6 +44,7 @@ public abstract class Visitor {
    public abstract void Visit (NAssignStmt a);
    public abstract void Visit (NWriteStmt w);
    public abstract void Visit (NIfStmt f);
+   public abstract void Visit (NBreakStmt f);
    public abstract void Visit (NForStmt f);
    public abstract void Visit (NReadStmt r);
    public abstract void Visit (NWhileStmt w);

@@ -114,8 +114,15 @@ public class ILCodeGen : Visitor {
       Out ($"   {labl2}:");
    }
 
-   public override void Visit (NForStmt f) { 
+   public override void Visit (NBreakStmt f) {
+      var lvl = f.Level != null ? int.Parse (f.Level.Text) : 1;
+      var idx = mLoopLabels.Count - lvl;
+      Out ($"    br {mLoopLabels[idx]}");
+   }
+
+   public override void Visit (NForStmt f) {
       string labl1 = NextLabel (), labl2 = NextLabel ();
+      AddLabel ();
       f.Start.Accept (this);
       StoreVar (f.Var);
       Out ($"    br {labl2}");
@@ -130,26 +137,31 @@ public class ILCodeGen : Visitor {
       f.End.Accept (this);
       Out (f.Ascending ? "    cgt" : "    clt");
       Out ($"    brfalse {labl1}");
+      OutLabel ();
    }
 
    public override void Visit (NReadStmt r) => throw new NotImplementedException ();
 
    public override void Visit (NWhileStmt w) {
       string lab1 = NextLabel (), lab2 = NextLabel ();
+      AddLabel ();
       Out ($"    br {lab2}");
       Out ($"  {lab1}:");
       w.Body.Accept (this);
       Out ($"  {lab2}:");
       w.Condition.Accept (this);
       Out ($"    brtrue {lab1}");
+      OutLabel ();
    }
 
    public override void Visit (NRepeatStmt r) {
       string lab = NextLabel ();
+      AddLabel ();
       Out ($"  {lab}:");
       Visit (r.Stmts);
       r.Condition.Accept (this);
       Out ($"    brfalse {lab}");
+      OutLabel ();
    }
    string NextLabel () => $"IL_{++mLabel:D4}";
    int mLabel;
@@ -233,6 +245,14 @@ public class ILCodeGen : Visitor {
    // Append text to output (continuing on the same line)
    void OutC (string s) => S.Append (s);
 
+   void AddLabel () => mLoopLabels.Add (NextLabel ());
+
+   void OutLabel () { 
+      var last = mLoopLabels.Last ();
+      mLoopLabels.RemoveAt (mLoopLabels.Count - 1);
+      Out ($"   {last}:");
+   }
+
    // Call Accept on a sequence of nodes
    void Visit (IEnumerable<Node> nodes) {
       foreach (var node in nodes) node.Accept (this);
@@ -246,4 +266,5 @@ public class ILCodeGen : Visitor {
       [String] = "string", [Integer] = "int32", [Real] = "float64",
       [Bool] = "bool", [Char] = "char", [Void] = "void",
    };
+   List<string> mLoopLabels = new ();
 }

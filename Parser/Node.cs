@@ -75,6 +75,13 @@ public record NIfStmt (NExpr Condition, NStmt IfPart, NStmt? ElsePart) : NStmt {
    public override void Accept (Visitor visitor) => visitor.Visit (this);
 }
 
+// A Break statement
+// Break Token is needed just to throw error in case of exception
+public record NBreakStmt (Token Break, Token? Level) : NStmt {
+   public override T Accept<T> (Visitor<T> visitor) => visitor.Visit (this);
+   public override void Accept (Visitor visitor) => visitor.Visit (this);
+}
+
 // A for statement
 public record NForStmt (Token Var, NExpr Start, bool Ascending, NExpr End, NStmt Body) : NStmt {
    public NExpr Start { get; set; } = Start;

@@ -86,13 +86,21 @@ class TypeAnalyze : Visitor<NType> {
       return Void;
    }
 
+   public override NType Visit (NBreakStmt f) {
+      var lvl = f.Level != null ? int.Parse (f.Level.Text) : 1;
+      if (lvl > mLevel) Fatal (f.Level ?? f.Break, "Unexpected break statement");
+      return Void;
+   }
+
    public override NType Visit (NForStmt f) {
+      mLevel++;
       var v = ExpectVar (f.Var);
       if (v.Type != Integer) Fatal (f.Var, "For loop variable must be an integer");
       v.Assigned = true; 
       f.Start = AddTypeCast (f.Start, v.Type);
       f.End = AddTypeCast (f.End, v.Type);
       f.Body.Accept (this);
+      mLevel--;
       return Void;
    }
 
@@ -111,14 +119,18 @@ class TypeAnalyze : Visitor<NType> {
    }
 
    public override NType Visit (NWhileStmt w) {
+      mLevel++;
       w.Condition = AddTypeCast (w.Condition, Bool);
       w.Body.Accept (this);
+      mLevel--;
       return Void; 
    }
 
    public override NType Visit (NRepeatStmt r) {
+      mLevel++;
       Visit (r.Stmts);
       r.Condition = AddTypeCast (r.Condition, Bool);
+      mLevel--;
       return Void;
    }
 
@@ -212,5 +224,6 @@ class TypeAnalyze : Visitor<NType> {
       return Void;
    }
 
+   int mLevel = 0;
    SymTable mSymbols = SymTable.Root;
 }

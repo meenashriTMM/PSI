@@ -97,6 +97,7 @@ public class Parser {
          if (Peek (OPEN)) return CallStmt ();
       }
       if (Match (IF)) return IfStmt ();
+      if (Match (BREAK)) return BreakStmt ();
       if (Match (FOR)) return ForStmt ();
       if (Peek (BEGIN)) return CompoundStmt ();
       if (Match (READ)) return ReadStmt ();
@@ -124,6 +125,8 @@ public class Parser {
       if (Match (ELSE)) { elsePart = Stmt (); Expect (SEMI); }
       return new (condition, ifPart, elsePart);
    }
+
+   NBreakStmt BreakStmt () => new (Prev, Match (L_INTEGER) ? Prev : null);
 
    // for-stmt = "for" ident ":=" expression ( "to" | "downto" ) expression "do" statement ";"
    NForStmt ForStmt () {

@@ -72,6 +72,11 @@ public class PSIPrint : Visitor<StringBuilder> {
       return S;
    }
 
+   public override StringBuilder Visit (NBreakStmt b) {
+      string lvl = b.Level != null ? $" {b.Level.Text}" : "";
+      return NWrite ($"break{lvl};");
+   }
+
    public override StringBuilder Visit (NForStmt f) {
       NWrite ($"for {f.Var.Text} := ");
       f.Start.Accept (this); Write (f.Ascending ? " to " : " downto ");
