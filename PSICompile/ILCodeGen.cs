@@ -140,7 +140,20 @@ public class ILCodeGen : Visitor {
       OutLabel ();
    }
 
-   public override void Visit (NReadStmt r) => throw new NotImplementedException ();
+   public override void Visit (NReadStmt r) {
+      Out ($"    call string [System.Console]System.Console::ReadLine ()");
+      if (r.Var == null) { Out ("    pop"); return; }
+      var vd = (NVarDecl)mSymbols.Find (r.Var)!;
+      Out (vd.Type switch {
+         Integer => "    call int32 [System.Runtime]System.Convert::ToInt32(string)",
+         Real => "    call float64 [System.Runtime]System.Convert::ToDouble(string)",
+         Bool => "    call bool [System.Runtime]System.Convert::ToBoolean(string)",
+         Char => "    call char [System.Runtime]System.Convert::ToChar(string)",
+         String => "    nop",
+         _ => throw new NotImplementedException (),
+      });
+      StoreVar (vd.Name);
+   }
 
    public override void Visit (NWhileStmt w) {
       string lab1 = NextLabel (), lab2 = NextLabel ();

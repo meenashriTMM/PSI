@@ -3,7 +3,8 @@ var
    a, b, c: integer;
 
 begin
-   a := 0;
+   readLn ();
+   readLn (a);
    while  a < 10 do
    begin
       writeln ("Value of a is :", a);

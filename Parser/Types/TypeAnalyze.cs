@@ -105,8 +105,7 @@ class TypeAnalyze : Visitor<NType> {
    }
 
    public override NType Visit (NReadStmt r) {
-      foreach (var name in r.Vars) 
-         ExpectVar (name).Assigned = true; 
+      if (r.Var != null) ExpectVar (r.Var).Assigned = true;
       return Void;
    }
 
